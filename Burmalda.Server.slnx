@@ -1,0 +1,8 @@
+﻿<Solution>
+  <Project Path="Source\Burmalda.DataAccess.Core\Burmalda.DataAccess.Core.csproj" Type="Classic C#" />
+  <Project Path="Source\Burmalda.DataAccess.EntityFramework\Burmalda.DataAccess.EntityFramework.csproj" Type="Classic C#" />
+  <Project Path="Source\Burmalda.Entities\Burmalda.Entities.csproj" Type="Classic C#" />
+  <Project Path="Source\Burmalda.Routing\Burmalda.Routing.csproj" Type="Classic C#" />
+  <Project Path="Source\Burmalda.Services.Core\Burmalda.Services.Core.csproj" Type="Classic C#" />
+  <Project Path="Source\Burmalda.Services\Burmalda.Services.csproj" Type="Classic C#" />
+</Solution>
