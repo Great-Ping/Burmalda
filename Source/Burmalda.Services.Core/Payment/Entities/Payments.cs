@@ -1,6 +1,6 @@
 namespace Burmalda.Services.Payment.Entities;
 
-public class Payments<T>(
+public record Payments<T>(
     ulong Id,
     string PaymentURL,
     bool IsPaid,

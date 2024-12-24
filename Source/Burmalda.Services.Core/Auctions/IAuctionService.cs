@@ -6,6 +6,6 @@ namespace Burmalda.Services.Auctions;
 
 public interface IAuctionService
 {
-    Task<Payments<DonatePreview>> SendDonateAsync(IDonateCreationModel donate);
-    Task<Payments<DonatePreview>> SendDonateToNewLotAsync(IDonateCreationModel donate, ILotCreationModel lot);
+    Task<Payments<DonatePreview>> SendDonateAsync(DonateCreationModel donate, LotSummary lot);
+    Task<Payments<DonatePreview>> SendDonateToNewLotAsync(DonateCreationModel donate, LotCreationModel lot);
 }

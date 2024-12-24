@@ -81,7 +81,10 @@ builder.Services
     .AddSingleton<IIdentificationService, IdentificationService>()
     .AddSingleton<IUsersService, UsersService>()
     .AddSingleton<IUsersRepository, UsersEfRepository>()
-    .AddSingleton<IDonatesRepository, DonatesEfRepository>();
+    .AddSingleton<IDonatesRepository, DonatesEfRepository>()
+    .AddSingleton<ILotsRepository, LotsEfRepository>()
+    .AddSingleton<IAuctionsRepository, AuctionsEfRepository>()
+    .AddSingleton<IBetsRepository, BetsEfRepository>();
 
 
 WebApplication app = builder.Build();

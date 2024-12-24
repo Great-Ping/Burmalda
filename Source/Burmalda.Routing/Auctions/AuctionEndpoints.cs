@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Burmalda.Entities.Donation;
 using Burmalda.Routing.Auctions.Entities;
 using Burmalda.Services.Auctions;
+using Burmalda.Services.Auctions.Entitites;
 using Burmalda.Services.Dontes.Entities;
 using Burmalda.Services.Payment.Entities;
 using Microsoft.AspNetCore.Mvc;
@@ -50,21 +51,44 @@ public static class AuctionEndpoints
 
     private static async Task<IResult> SendDonateToNewLotAsync(
         HttpContext context,
-        [AsParameters] DonateCreationModel donate,
-        [AsParameters] LotCreationModel lot,
+        [FromRoute] ulong auctionId,
+        [FromBody] SendDonateToNewLotRequestBody requestBody,
         [FromServices] IAuctionService auctions
     ){
+        DonateCreationModel donate = new(
+            context.GetUserId(),
+            requestBody.Message,
+            requestBody.Amount
+        );
+
+        LotCreationModel lot = new(
+            auctionId,
+            requestBody.LotTitle
+        );
+        
         Payments<DonatePreview> payments = await auctions.SendDonateToNewLotAsync(donate, lot);
         return Results.Ok(payments);
     }
 
     private static async Task<IResult> SendDonateAsync(
         HttpContext context,
-        [AsParameters] DonateCreationModel args,
+        [FromRoute] ulong auctionId,
+        [FromRoute] ulong lotId,
+        [FromBody] SendDonateRequestBody requestBody,
         [FromServices] IAuctionService auctions
-    )
-    {
-        Payments<DonatePreview> payments = await auctions.SendDonateAsync(args);
+    ){
+        DonateCreationModel donate = new(
+            context.GetUserId(),
+            requestBody.Message,
+            requestBody.Amount
+        );
+
+        LotSummary lot = new LotSummary(
+            auctionId,
+            lotId
+        );
+        
+        Payments<DonatePreview> payments = await auctions.SendDonateAsync(donate, lot);
         return Results.Ok(payments);
     }
 
