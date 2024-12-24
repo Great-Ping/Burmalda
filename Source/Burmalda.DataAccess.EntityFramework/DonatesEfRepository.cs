@@ -4,5 +4,5 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Burmalda.DataAccess;
 
-public class DonatesEfRepository(IDbContextFactory<BurmaldaDbContext> contextFactory)
+public class DonatesEfRepository(BurmaldaDbContext contextFactory)
     : BaseEfRepository<Donate>(contextFactory), IDonatesRepository;

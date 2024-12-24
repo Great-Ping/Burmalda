@@ -1,152 +1,95 @@
 using Burmalda.DataAccess;
+using Burmalda.Entities;
 using Burmalda.Entities.Auctions;
 using Burmalda.Entities.Donation;
 using Burmalda.Entities.Users;
 using Burmalda.Services.Auctions.Entitites;
 using Burmalda.Services.Dontes.Entities;
-using Burmalda.Services.Payment;
-using Burmalda.Services.Payment.Entities;
+using Burmalda.Services.Users.Entities;
 
 namespace Burmalda.Services.Auctions;
 
 public class AuctionService(
-    IPaymentService paymentService, 
-    IAuctionsRepository auctions, 
-    ILotsRepository lots, 
-    IUsersRepository users,
-    IBetsRepository bets,
-    IDonatesRepository donates
-) : IAuctionService 
+    IAuctionsRepository auctions,
+    IUsersRepository users,    
+    ILotsRepository lots,
+    IBetsRepository bets
+): IAuctionService
 {
-    public async Task<Payments<DonatePreview>> SendDonateAsync(DonateCreationModel donate, LotSummary lotSummary)
+    public async Task<AuctionDetails?> FindByIdAsync(ulong id)
     {
-       Auction? auction = await auctions.FindAsync(auction => auction.Id == lotSummary.AuctionId);
+        Auction auction = await auctions.FindAsync(x => x.Id == id);
         
         if (auction is null)
-            throw new KeyNotFoundException(nameof(lotSummary.AuctionId));
+            return null;
         
-        User? user = await users.FindAsync(user => user.Id == donate.DonatorId);
-        
-        if (user is null)
-            throw new KeyNotFoundException(nameof(donate.DonatorId));
-
-        AuctionLot? lot = await lots.FindAsync(x => lotSummary.LotId == x.Id);
-        
-        if (lot is null)
-            throw new KeyNotFoundException(nameof(lotSummary.LotId));
-        
-        
-        Donate newDonate = new Donate
-        {
-            IsPaid = false,
-            Amount = donate.Amount,
-            Message = donate.Message,
-            DonatorId = user.Id,
-            Donator = user,
-            Bet = null,
-            Id = 0
-        };
-        
-        newDonate = await donates.AddAsync(newDonate);
-
-        ResourcePaidAsync<Donate> after = async (newDonate) =>
-        {
-            AuctionBet bet = new()
-            {
-                Id = 0,
-                Amount = donate.Amount,
-                IsFake = false,
-                LotId = lot.Id,
-                Lot = lot,
-                OwnerId = user.Id,
-                Owner = user,
-                DonateId = newDonate.Id,
-                Donate = newDonate,
-
-            };
-            bet = await bets.AddAsync(bet);
-
-            newDonate.IsPaid = true;
-            newDonate.BetId = bet.Id;
-            newDonate.Bet = bet;
-            await donates.UpdateAsync(newDonate);
-        };
-
-        Payments<Donate> payments = await paymentService.CreatePaymentsAsync(newDonate, newDonate.Amount, after);
-        
-        return new Payments<DonatePreview>(
-            payments.Id,
-            payments.PaymentURL,
-            payments.IsPaid,
-            DonatePreview.FromDonate(payments.Resource)
-        );
+        return AuctionDetails.FromAuction(auction);
     }
 
-    public async Task<Payments<DonatePreview>> SendDonateToNewLotAsync(DonateCreationModel donate, LotCreationModel lot)
+    public async Task<AuctionDetails> CreateAuctionAsync(AuctionCreationModel auction)
     {
-        Auction? auction = await auctions.FindAsync(auction => auction.Id == lot.AuctionId);
+        Streamer? streamer = await users.FindStreamerAsync(x => x.Id == auction.OwnerId);
+
+        if (streamer == null)
+            throw new BurmaldaEntityNotFoundException(nameof(auction.OwnerId));
+        
+        Auction newAuction = new()
+        {
+            Id = 0,
+            Title = auction.Title,
+            IsCompleted = false,
+            TimeIncrementingStrategy = TimeIncrementingStrategy.AlwaysIncrement,
+            StartDate = DateTimeOffset.Now,
+            Duration = auction.InitialDuration,
+            WinnerId = null,
+            Winner = null,
+            OwnerId = auction.OwnerId,
+            Owner = null,
+            Lots = [],
+        };
+        
+         newAuction = await auctions.AddAsync(newAuction);
+         return AuctionDetails.FromAuction(newAuction);
+    }
+
+    public async Task<AuctionLotPreview> CreateLotByOwnerAsync(ulong userId, LotCreationModel lot)
+    {
+        Auction? auction = await auctions.FindAsync(auction => auction.Id == lot.AuctionId && auction.OwnerId == userId);
         
         if (auction is null)
-            throw new KeyNotFoundException(nameof(lot.AuctionId));
+            throw new BurmaldaEntityNotFoundException(nameof(lot.AuctionId));
         
-        User? user = await users.FindAsync(user => user.Id == donate.DonatorId);
+        AuctionLot newLot = await CreateLotAsync(auction, lot);
         
-        if (user is null)
-            throw new KeyNotFoundException(nameof(donate.DonatorId));
-
-        Donate newDonate = new Donate
+        return AuctionLotPreview.FromLot(newLot);
+    }
+    
+    public async Task<AuctionLot> CreateLotAsync(Auction auction, LotCreationModel lot)
+    {
+        AuctionLot newLot = new()
         {
-            IsPaid = false,
+            Id = 0,
+            Title = lot.Title,
+            Bets = [],
+            AuctionId = auction.Id,
+            Auction = null!
+        };
+        return await lots.AddAsync(newLot);
+    }
+
+    public async Task<AuctionBet> SendBetAsync(AuctionLot lot, Donate donate)
+    {
+        AuctionBet bet = new()
+        {
+            Id = 0,
             Amount = donate.Amount,
-            Message = donate.Message,
-            DonatorId = user.Id,
-            Donator = user,
-            Bet = null,
-            Id = 0
+            IsFake = false,
+            LotId = lot.Id,
+            Lot = null!,
+            DonateId = donate.Id,
+            Donate = null,
         };
         
-        newDonate = await donates.AddAsync(newDonate);
-
-        ResourcePaidAsync<Donate> after = async (newDonate) =>
-        {
-            AuctionLot newLot = new()
-            {
-                Id = 0,
-                Title = lot.Title,
-                Bets = new List<AuctionBet>(),
-                AuctionId = auction.Id,
-                Auction = auction
-            };
-            newLot = await lots.AddAsync(newLot);
-
-            AuctionBet bet = new()
-            {
-                Id = 0,
-                Amount = donate.Amount,
-                IsFake = false,
-                LotId = newLot.Id,
-                Lot = newLot,
-                OwnerId = user.Id,
-                Owner = user,
-                DonateId = newDonate.Id,
-                Donate = newDonate,
-
-            };
-            bet = await bets.AddAsync(bet);
-
-            newDonate.IsPaid = true;
-            newDonate.BetId = bet.Id;
-            newDonate.Bet = bet;
-            await donates.UpdateAsync(newDonate);
-        };
-
-        Payments<Donate> payments = await paymentService.CreatePaymentsAsync(newDonate, newDonate.Amount, after);
-        
-        return new Payments<DonatePreview>(
-            payments.Id,
-            payments.PaymentURL,
-            payments.IsPaid,
-            DonatePreview.FromDonate(payments.Resource)
-        );
+        return await bets.AddAsync(bet);
     }
 }

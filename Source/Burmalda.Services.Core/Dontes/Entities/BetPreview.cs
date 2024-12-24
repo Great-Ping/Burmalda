@@ -6,8 +6,7 @@ public record BetPreview(
     ulong Id, 
     decimal Amount, 
     ulong BetLotId, 
-    ulong? BetOwnerId, 
-    ulong BetDonateId
+    ulong? BetDonateId
 ){
     public static BetPreview FromBet(AuctionBet bet)
     {
@@ -15,7 +14,6 @@ public record BetPreview(
             bet.Id,
             bet.Amount,
             bet.LotId,
-            bet.OwnerId,
             bet.DonateId
         );
     }

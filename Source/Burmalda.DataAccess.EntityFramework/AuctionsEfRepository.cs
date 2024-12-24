@@ -3,5 +3,5 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Burmalda.DataAccess;
 
-public class AuctionsEfRepository(IDbContextFactory<BurmaldaDbContext> contextFactory)
+public class AuctionsEfRepository(BurmaldaDbContext contextFactory)
     : BaseEfRepository<Auction>(contextFactory), IAuctionsRepository;

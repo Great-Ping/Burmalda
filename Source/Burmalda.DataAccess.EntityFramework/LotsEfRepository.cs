@@ -3,5 +3,5 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Burmalda.DataAccess;
 
-public class LotsEfRepository(IDbContextFactory<BurmaldaDbContext> contextFactory)
+public class LotsEfRepository(BurmaldaDbContext contextFactory)
     : BaseEfRepository<AuctionLot>(contextFactory), ILotsRepository;

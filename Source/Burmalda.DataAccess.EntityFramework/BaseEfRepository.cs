@@ -8,44 +8,44 @@ namespace Burmalda.DataAccess;
 
 public abstract class BaseEfRepository<T>: IRepository<T> where T : class
 {
-    public BaseEfRepository(IDbContextFactory<BurmaldaDbContext> contextFactory)
+    public BaseEfRepository(BurmaldaDbContext context)
     {
-        ContextFactory = contextFactory;
+        _context = context;
     }
-    protected IDbContextFactory<BurmaldaDbContext> ContextFactory { get; }
+    protected BurmaldaDbContext _context { get; }
     
     public virtual async Task<T> AddAsync(T target, CancellationToken cancellationToken = default)
     {
-        await using BurmaldaDbContext context = await ContextFactory.CreateDbContextAsync(cancellationToken);
-        EntityEntry<T> entry = await context.Set<T>().AddAsync(target, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
+        
+        EntityEntry<T> entry = await _context.Set<T>().AddAsync(target, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
         return entry.Entity;
     }
 
     public virtual async Task<T> UpdateAsync(T target, CancellationToken cancellationToken = default)
     {
-        await using BurmaldaDbContext context = await ContextFactory.CreateDbContextAsync(cancellationToken);
-        EntityEntry<T> entry = context.Set<T>().Update(target);
-        await context.SaveChangesAsync(cancellationToken);
+        
+        EntityEntry<T> entry = _context.Set<T>().Update(target);
+        await _context.SaveChangesAsync(cancellationToken);
         return entry.Entity;
     }
 
     public virtual async Task DeleteAsync(T target, CancellationToken cancellationToken = default)
     {
-        await using BurmaldaDbContext context = await ContextFactory.CreateDbContextAsync(cancellationToken);
-        context.Set<T>().Remove(target);
-        await context.SaveChangesAsync(cancellationToken);
+        
+        _context.Set<T>().Remove(target);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 
     public virtual async Task<T?> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        await using BurmaldaDbContext context = await ContextFactory.CreateDbContextAsync(cancellationToken);
-        return await context.Set<T>().AsNoTracking().FirstOrDefaultAsync(predicate, cancellationToken);
+        
+        return await _context.Set<T>().FirstOrDefaultAsync(predicate, cancellationToken);
     }
     
     public virtual async Task<T[]> WhereAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default)
     {
-        await using BurmaldaDbContext context = await ContextFactory.CreateDbContextAsync(cancellationToken);
-        return await context.Set<T>().AsNoTracking().Where(predicate).ToArrayAsync(cancellationToken);
+        
+        return await _context.Set<T>().Where(predicate).ToArrayAsync(cancellationToken);
     }
 }

@@ -3,5 +3,5 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Burmalda.DataAccess;
 
-public class BetsEfRepository(IDbContextFactory<BurmaldaDbContext> contextFactory)
-    : BaseEfRepository<AuctionBet>(contextFactory), IBetsRepository;
+public class BetsEfRepository(BurmaldaDbContext context)
+    : BaseEfRepository<AuctionBet>(context), IBetsRepository;

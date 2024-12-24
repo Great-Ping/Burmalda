@@ -103,15 +103,6 @@ public sealed class BurmaldaDbContext : DbContext
             .WithOne(x => x.Lot)
             .HasForeignKey(x => x.LotId);
         
-        //Ставки и пользователи
-        modelBuilder.Entity<AuctionBet>()
-            .HasOne(x => x.Owner)
-            .WithMany()
-            .HasForeignKey(x => x.OwnerId);
-
-        modelBuilder.Entity<AuctionBet>()
-            .HasKey(x => new { x.LotId, x.OwnerId });
-        
         //Пользователи и донаты
         modelBuilder.Entity<User>()
             .HasMany(x => x.Donates)
@@ -122,7 +113,14 @@ public sealed class BurmaldaDbContext : DbContext
         //Донаты и ставки
         modelBuilder.Entity<Donate>()
             .HasOne(x => x.Bet)
-            .WithOne(bet => bet.Donate);
+            .WithMany()
+            .IsRequired(false);
+        
+        modelBuilder.Entity<AuctionBet>()
+            .HasOne(x => x.Donate)
+            .WithMany()
+            .IsRequired(false);
+
         
         //Пользователи и кошельки
         modelBuilder.Entity<User>()

@@ -15,20 +15,22 @@ public class UsersService(
 
     public async Task<UserIdentificationData> CreateNewUserAsync(UserCreationData userData)
     {
-        User newUser = new()
+        Streamer newStreamer = new()
         {
             Id = 0,
             Nickname = userData.Nickname,
             Email = userData.Email,
             PasswordHash = userData.PasswordHash,
             Permissions = UserPermissions.None,
-            Subscriptions = null,
-            Donates = null,
+            Subscriptions = [],
+            Donates = [],
             Account = new UserAccount(balance: 0),
-            ModeratedStreamers = null,
+            ModeratedStreamers = [],
+            Moderators = [],
+            Auctions = [],
         };
 
-        newUser = await _usersRepository.AddAsync(newUser);
+        User newUser = await _usersRepository.AddAsync(newStreamer);
         
         return UserIdentificationData.FromUser(newUser);
     }

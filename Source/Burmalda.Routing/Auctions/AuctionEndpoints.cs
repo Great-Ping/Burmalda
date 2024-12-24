@@ -6,7 +6,6 @@ using Burmalda.Services.Auctions.Entitites;
 using Burmalda.Services.Dontes.Entities;
 using Burmalda.Services.Payment.Entities;
 using Microsoft.AspNetCore.Mvc;
-
 namespace Burmalda.Routing.Auctions;
 
 public static class AuctionEndpoints
@@ -19,11 +18,17 @@ public static class AuctionEndpoints
         RouteGroupBuilder groupBuilder = builder.MapGroup(prefix)
             .WithTags([Tag]);           
 
-        groupBuilder.MapGet("/", GetAuctionsAsync)
-            .WithSummary("Вернет список аукционов");
         groupBuilder.MapPost("/", CreateAuctionAsync)
-            .WithSummary("Создаст новый аукцион, вернет его id");
+            .RequireAuthorization()
+            .WithSummary("Создаст новый аукцион, вернет его данные");
+
+        groupBuilder.MapGet("/{auctionId:ulong}", GetAuctionByIdAsync)
+            .WithSummary("Вернет аукцион по его идентификатору");
         
+        groupBuilder.MapGet("/@my", GetAuctionsAsync)
+            .RequireAuthorization()
+            .WithSummary("Вернет список всех аукционов пользователя");
+
         groupBuilder.MapPatch("/{auctionId:ulong}", UpdateAuctionAsync)
             .WithSummary("Обновление параметров аукциона");
         groupBuilder.MapDelete("/{auctionId:ulong}", DeleteAuctionAsync)
@@ -49,11 +54,23 @@ public static class AuctionEndpoints
         return groupBuilder;
     }
 
+    private static async Task<IResult> GetAuctionByIdAsync(
+        [FromRoute] ulong auctionId,
+        [FromServices] IAuctionService auctions
+    )
+    {
+        AuctionDetails? auction = await auctions.FindByIdAsync(auctionId);
+        if (auction is null)
+            return Results.NotFound();
+        
+        return Results.Ok(auction);
+    }
+
     private static async Task<IResult> SendDonateToNewLotAsync(
         HttpContext context,
         [FromRoute] ulong auctionId,
         [FromBody] SendDonateToNewLotRequestBody requestBody,
-        [FromServices] IAuctionService auctions
+        [FromServices] IAuctionPaymentService auctionsPayment
     ){
         DonateCreationModel donate = new(
             context.GetUserId(),
@@ -66,7 +83,7 @@ public static class AuctionEndpoints
             requestBody.LotTitle
         );
         
-        Payments<DonatePreview> payments = await auctions.SendDonateToNewLotAsync(donate, lot);
+        Payments<DonatePreview> payments = await auctionsPayment.SendDonateToNewLotAsync(donate, lot);
         return Results.Ok(payments);
     }
 
@@ -75,7 +92,7 @@ public static class AuctionEndpoints
         [FromRoute] ulong auctionId,
         [FromRoute] ulong lotId,
         [FromBody] SendDonateRequestBody requestBody,
-        [FromServices] IAuctionService auctions
+        [FromServices] IAuctionPaymentService auctionsPayment
     ){
         DonateCreationModel donate = new(
             context.GetUserId(),
@@ -88,7 +105,7 @@ public static class AuctionEndpoints
             lotId
         );
         
-        Payments<DonatePreview> payments = await auctions.SendDonateAsync(donate, lot);
+        Payments<DonatePreview> payments = await auctionsPayment.SendDonateAsync(donate, lot);
         return Results.Ok(payments);
     }
 
@@ -122,9 +139,21 @@ public static class AuctionEndpoints
         throw new NotImplementedException();
     }
 
-    internal static async Task<IResult> CreateAuctionAsync()
+    internal static async Task<IResult> CreateAuctionAsync(
+        HttpContext context,
+        [FromServices] IAuctionService auctions,
+        [FromBody] CreateAuctionRequestBody requestBody
+    )
     {
-        throw new NotImplementedException();
+        AuctionCreationModel auction = new(
+            requestBody.Title,
+            requestBody.InitialDuration,
+            requestBody.TimeIncrementingStrategy,
+            context.GetUserId()
+        );
+        
+        AuctionDetails created = await auctions.CreateAuctionAsync(auction);
+        return Results.Ok(created);
     }
 
 

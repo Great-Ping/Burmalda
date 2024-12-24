@@ -4,7 +4,10 @@ using Burmalda.Routing.Auctions;
 using Burmalda.Routing.Donates;
 using Burmalda.Routing.Identity;
 using Burmalda.Routing.Users;
+using Burmalda.Services.Auctions;
 using Burmalda.Services.Identification;
+using Burmalda.Services.Payment;
+using Burmalda.Services.PaymentsService;
 using Burmalda.Services.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -69,7 +72,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddDbContextFactory<BurmaldaDbContext>(options =>
+builder.Services.AddDbContext<BurmaldaDbContext>(options =>
 {
     options
         .UseSqlite("Data Source=burmalda.db")
@@ -78,13 +81,18 @@ builder.Services.AddDbContextFactory<BurmaldaDbContext>(options =>
 
 
 builder.Services
-    .AddSingleton<IIdentificationService, IdentificationService>()
-    .AddSingleton<IUsersService, UsersService>()
-    .AddSingleton<IUsersRepository, UsersEfRepository>()
-    .AddSingleton<IDonatesRepository, DonatesEfRepository>()
-    .AddSingleton<ILotsRepository, LotsEfRepository>()
-    .AddSingleton<IAuctionsRepository, AuctionsEfRepository>()
-    .AddSingleton<IBetsRepository, BetsEfRepository>();
+    .AddScoped<IUsersRepository, UsersEfRepository>()
+    .AddScoped<IDonatesRepository, DonatesEfRepository>()
+    .AddScoped<ILotsRepository, LotsEfRepository>()
+    .AddScoped<IAuctionsRepository, AuctionsEfRepository>()
+    .AddScoped<IBetsRepository, BetsEfRepository>();
+
+builder.Services
+    .AddScoped<IIdentificationService, IdentificationService>()
+    .AddScoped<IUsersService, UsersService>()
+    .AddScoped<IAuctionService, AuctionService>()
+    .AddScoped<IAuctionPaymentService, AuctionPaymentService>()
+    .AddScoped<IPaymentService, StupidPaymentService>();
 
 
 WebApplication app = builder.Build();
