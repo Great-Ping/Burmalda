@@ -92,4 +92,47 @@ public class AuctionService(
         
         return await bets.AddAsync(bet);
     }
+
+    public async Task<IEnumerable<AuctionLotPreview>> GetAuctionLotsAsync(ulong auctionId)
+    {
+        Auction? auction = await auctions.FindAsync(auction => auction.Id == auctionId);
+        
+        if (auction is null)
+            throw new BurmaldaEntityNotFoundException(nameof(auctionId));
+        
+        return auction?.Lots?.Select(AuctionLotPreview.FromLot) ?? [];
+    }
+
+    public async Task<AuctionDetails> UpdateAuctionAsync(ulong auctionId, AuctionCreationModel newParmeters)
+    {
+        Auction? auction = await auctions.FindAsync(auction => auction.Id == auctionId && auction.OwnerId == newParmeters.OwnerId);
+        
+        if (auction is null)
+            throw new BurmaldaEntityNotFoundException(nameof(auctionId));
+        
+        
+        auction.Title = newParmeters.Title;
+        auction.TimeIncrementingStrategy = newParmeters.TimeIncrementingStrategy;
+        
+        return AuctionDetails.FromAuction(auction);
+    }
+
+    public async Task<IEnumerable<AuctionPreview>> GetUserAuctionsAsync(ulong userId)
+    {
+        IEnumerable<Auction> result = await auctions.WhereAsync(x => x.OwnerId == userId);
+        return result.Select(AuctionPreview.FromAuction);
+    }
+
+    public async Task<AuctionPreview> CompleteAuctionAsync(ulong userId, ulong auctionId, ulong winnerId)
+    {
+        Auction? auction = await auctions.FindAsync(auction => auction.Id == auctionId && auction.OwnerId == userId);
+    
+        if (auction is null)
+            throw new BurmaldaEntityNotFoundException(nameof(auctionId));
+
+        auction.IsCompleted = true;
+        auction.WinnerId = winnerId;
+        Auction result = await auctions.UpdateAsync(auction);
+        return AuctionPreview.FromAuction(result);
+    }
 }

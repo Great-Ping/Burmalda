@@ -14,5 +14,9 @@ public interface IAuctionService
     Task<AuctionLotPreview> CreateLotByOwnerAsync(ulong userId, LotCreationModel lot);
     Task<AuctionLot> CreateLotAsync(Auction auction, LotCreationModel lot);
     
-    Task<AuctionBet> SendBetAsync(AuctionLot lot, Donate donate); 
+    Task<AuctionBet> SendBetAsync(AuctionLot lot, Donate donate);
+    Task<IEnumerable<AuctionLotPreview>> GetAuctionLotsAsync(ulong auctionId);
+    Task<AuctionDetails> UpdateAuctionAsync(ulong auctionId, AuctionCreationModel auction);
+    Task<IEnumerable<AuctionPreview>> GetUserAuctionsAsync(ulong userId);
+    Task<AuctionPreview> CompleteAuctionAsync(ulong userId, ulong auctionId, ulong winnerId);
 }
